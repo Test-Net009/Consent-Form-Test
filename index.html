@@ -7,6 +7,61 @@
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
+  <body>
+<div class="form-container">
+  <div class="row">
+    <div class="field">
+      <label for="firstname">First Name:</label>
+      <input type="text" id="firstname" name="firstname" placeholder="Enter first name" />
+    </div>
+    <div class="field">
+      <label for="lastname">Last Name:</label>
+      <input type="text" id="lastname" name="lastname" placeholder="Enter last name" />
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="field">
+      <label for="email">Email:</label>
+      <input type="email" id="email" name="email" placeholder="Enter email" />
+    </div>
+    <div class="field">
+      <label for="phone">Phone No:</label>
+      <input type="tel" id="phone" name="phone" placeholder="Enter phone number" />
+    </div>
+  </div>
+</div>
+
+<style>
+  .form-container {
+    max-width: 500px;
+    margin: 20px auto;
+    font-family: Arial, sans-serif;
+  }
+
+  .row {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 15px;
+  }
+
+  .field {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  label {
+    margin-bottom: 5px;
+    font-weight: bold;
+  }
+
+  input {
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+  }
+</style>
   <div class="widget-container">
     <div class="header-container">
       <div class="logo" id="logo-area"></div>
