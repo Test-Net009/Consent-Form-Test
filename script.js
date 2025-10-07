@@ -25,7 +25,7 @@ async function fetchConsentData() {
 
 function setDataPrincipalIdList() {
   dataPrincipalIdList = [];
-  const email = 'email'; // Placeholder; can be updated to fetch from input if needed
+  const email = document.getElementById("email").value;// Placeholder; can be updated to fetch from input if needed
   let obj = {
     key: 'email',
     value: email
