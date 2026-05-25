@@ -34,13 +34,15 @@
   <script>
     // Configuration options for the consent widget
     window.consentWidgetConfig = {
-      consentFormId: "5193982c-f0d8-41fb-8a0b-9a4e7f740b7e",
-      apiUrl: "https://auto-hs.qhtpl.com/cpm-api/consent/v1/getConsentFormById",
-      submitApiUrl: "https://auto-hs.qhtpl.com/cpm-api/consent/v1/createOrUpdateConsent",
-      dataPrincipalId: {
+      consentFormId: "08c7eddb-0431-4dd9-9c98-d628c635cd15",
+      apiUrl: "https://starhealth.pre-dataprivacy.com/cpm-api/consent/v1/getConsentFormById",
+      submitApiUrl: "https://starhealth.pre-dataprivacy.com/cpm-api/consent/v1/createOrUpdateConsent",
+      dataPrincipalId: [
+        {
           key: "email",
           value: "email"
-        },
+        }
+      ],
       showButtons: true,
       showLanguageDropdown: true,
       enableCheckboxes: true,

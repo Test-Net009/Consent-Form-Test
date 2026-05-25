@@ -36,10 +36,11 @@ async function fetchConsentData() {
 
 function setDataPrincipalIdList() {
   const { dataPrincipalId } = window.consentWidgetConfig || {};
-  if (dataPrincipalId && dataPrincipalId.key && dataPrincipalId.value) {
-    dataPrincipalIdList.push({
-      key: dataPrincipalId.key,
-      value: dataPrincipalId.value,
+  if (Array.isArray(dataPrincipalId)) {
+    dataPrincipalId.forEach(({ key, value }) => {
+      if (key && value) {
+        dataPrincipalIdList.push({ key, value });
+      }
     });
   }
 }
@@ -72,16 +73,16 @@ function getFormValues(selectedLang) {
   const radioButtons = consentDiv.querySelectorAll('input[type="radio"]:checked');
   const dropdowns = consentDiv.querySelectorAll("select");
 
-  const pushConsent = (permissionId, label) => {
+  const pushConsent = (permissionId, optionId) => {
     let existing = createConsentRequestList.find(req => req.permissionId === permissionId);
     if (existing) {
-      existing.optedFor.push(label);
+      existing.optedForIndexes.push(parseInt(optionId));
     } else {
       createConsentRequestList.push({
         dataPrincipalIdList,
         permissionId,
         consentReceivedType: "FORMS",
-        optedFor: [label],
+        optedForIndexes: [parseInt(optionId)],
         consentLanguage: selectedLang
       });
     }
@@ -89,20 +90,21 @@ function getFormValues(selectedLang) {
 
   checkboxes.forEach(checkbox => {
     if (!enableCheckboxes) return;
-    const label = checkbox.closest("label") ? checkbox.closest("label").textContent.trim() : checkbox.value;
-    pushConsent(checkbox.name, label);
+    const optionId = checkbox.getAttribute("data-option-id") || "0";
+    pushConsent(checkbox.name, optionId);
   });
 
   radioButtons.forEach(radio => {
     if (!enableRadioButtons) return;
-    const label = radio.closest("label") ? radio.closest("label").textContent.trim() : radio.value;
-    pushConsent(radio.name, label);
+    const optionId = radio.getAttribute("data-option-id") || "0";
+    pushConsent(radio.name, optionId);
   });
 
   dropdowns.forEach(drop => {
     if (!enableDropdowns) return;
     const selected = drop.options[drop.selectedIndex];
-    pushConsent(drop.name, selected.textContent);
+    const optionId = selected.getAttribute("data-option-id") || "0";
+    pushConsent(drop.name, optionId);
   });
 
   document.querySelectorAll("#consent-root [name]").forEach(el => {
@@ -111,7 +113,7 @@ function getFormValues(selectedLang) {
         dataPrincipalIdList,
         permissionId: el.name,
         consentReceivedType: "FORMS",
-        optedFor: [],
+        optedForIndexes: [],
         consentLanguage: selectedLang
       });
     }
@@ -130,7 +132,11 @@ async function sendConsent() {
       body: JSON.stringify({ createConsentRequestDtoWrapper: createConsentRequestList })
     });
     const data = await res.json();
-
+    try {
+      sessionStorage.setItem("consentResponse", JSON.stringify(data));
+    } catch (e) {
+      console.error("Storage failed:", e);
+    }
     if (data.response && data.statusCode === 200) {
       showToast("Consent saved successfully!", "success");
     } else {
@@ -312,43 +318,86 @@ function renderConsent(data, selectedLang) {
         block.appendChild(p);
       }
 
+      const optionMap = perm.optionsMap || {};
       const options = tr?.options || perm.options || [];
+      const hasOptionMap = Object.keys(optionMap).length > 0;
 
       if (perm.elementType === 'CHECKBOX' && enableCheckboxes) {
-        options.forEach(opt => {
-          const label = document.createElement("label");
-          const input = document.createElement("input");
-          input.type = "checkbox";
-          input.name = perm.id;
-          input.value = opt;
-          label.appendChild(input);
-          label.append(" " + opt);
-          block.appendChild(label);
-        });
+        if (hasOptionMap) {
+          Object.entries(optionMap).forEach(([id, label]) => {
+            const labelEl = document.createElement("label");
+            const input = document.createElement("input");
+            input.type = "checkbox";
+            input.name = perm.id;
+            input.value = label;
+            input.setAttribute("data-option-id", id);
+            labelEl.appendChild(input);
+            labelEl.append(" " + label);
+            block.appendChild(labelEl);
+          });
+        } else {
+          options.forEach((opt, idx) => {
+            const labelEl = document.createElement("label");
+            const input = document.createElement("input");
+            input.type = "checkbox";
+            input.name = perm.id;
+            input.value = opt;
+            input.setAttribute("data-option-id", idx.toString());
+            labelEl.appendChild(input);
+            labelEl.append(" " + opt);
+            block.appendChild(labelEl);
+          });
+        }
       }
 
       if (perm.elementType === 'RADIOBUTTON' && enableRadioButtons) {
-        options.forEach(opt => {
-          const label = document.createElement("label");
-          const input = document.createElement("input");
-          input.type = "radio";
-          input.name = perm.id;
-          input.value = opt;
-          label.appendChild(input);
-          label.append(" " + opt);
-          block.appendChild(label);
-        });
+        if (hasOptionMap) {
+          Object.entries(optionMap).forEach(([id, label]) => {
+            const labelEl = document.createElement("label");
+            const input = document.createElement("input");
+            input.type = "radio";
+            input.name = perm.id;
+            input.value = label;
+            input.setAttribute("data-option-id", id);
+            labelEl.appendChild(input);
+            labelEl.append(" " + label);
+            block.appendChild(labelEl);
+          });
+        } else {
+          options.forEach((opt, idx) => {
+            const labelEl = document.createElement("label");
+            const input = document.createElement("input");
+            input.type = "radio";
+            input.name = perm.id;
+            input.value = opt;
+            input.setAttribute("data-option-id", idx.toString());
+            labelEl.appendChild(input);
+            labelEl.append(" " + opt);
+            block.appendChild(labelEl);
+          });
+        }
       }
 
       if (perm.elementType === 'DROPDOWN' && enableDropdowns) {
         const select = document.createElement("select");
         select.name = perm.id;
-        options.forEach(opt => {
-          const option = document.createElement("option");
-          option.value = opt;
-          option.text = opt;
-          select.appendChild(option);
-        });
+        if (hasOptionMap) {
+          Object.entries(optionMap).forEach(([id, label]) => {
+            const option = document.createElement("option");
+            option.value = label;
+            option.text = label;
+            option.setAttribute("data-option-id", id);
+            select.appendChild(option);
+          });
+        } else {
+          options.forEach((opt, idx) => {
+            const option = document.createElement("option");
+            option.value = opt;
+            option.text = opt;
+            option.setAttribute("data-option-id", idx.toString());
+            select.appendChild(option);
+          });
+        }
         block.appendChild(select);
       }
 
@@ -450,6 +499,10 @@ clickEvent = e => {
 };
 
 submitBtn.addEventListener("click", clickEvent);
+
+cancelBtn.onclick = () => {
+  window.location.reload();
+};
 
 }
 
